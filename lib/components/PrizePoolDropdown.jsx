@@ -10,6 +10,7 @@ import { SelectInputGroup } from 'lib/components/SelectInputGroup'
 import { useWalletNetwork } from 'lib/hooks/useWalletNetwork'
 import { fetchPrizePoolType } from 'lib/utils/fetchPrizePoolType'
 import { poolToast } from 'lib/utils/poolToast'
+import { groupedOptions, knownCustomYieldSourceAddresses } from 'lib/data/prizePoolDropdownData'
 
 export const PrizePoolDropdown = (props) => {
   const {
@@ -29,7 +30,7 @@ export const PrizePoolDropdown = (props) => {
   const [selectValue, setSelectValue] = useState()
   const [inputError, setInputError] = useState()
 
-  const options = reactSelectGroupedOptions[walletChainId]
+  const options = groupedOptions[walletChainId]
 
   useEffect(() => {
     handleClear()
