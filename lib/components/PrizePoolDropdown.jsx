@@ -1,16 +1,25 @@
 import React, { useContext, useEffect, useState } from 'react'
-import { isValidAddress } from '@pooltogether/utilities'
+import {
+  getKnownYieldSourceContract,
+  reactSelectGroupedOptions,
+  isValidAddress
+} from '@pooltogether/utilities'
 
-import { PRIZE_POOL_TYPE } from 'lib/constants'
 import { WalletContext } from 'lib/components/WalletContextProvider'
 import { SelectInputGroup } from 'lib/components/SelectInputGroup'
-import { groupedOptions, knownCustomYieldSourceAddresses } from 'lib/data/prizePoolDropdownData'
 import { useWalletNetwork } from 'lib/hooks/useWalletNetwork'
 import { fetchPrizePoolType } from 'lib/utils/fetchPrizePoolType'
 import { poolToast } from 'lib/utils/poolToast'
 
 export const PrizePoolDropdown = (props) => {
-  const { setLoadingPrizePoolData, setPrizePool, setDepositToken, resetState } = props
+  const {
+    errorDeterminingPrizePoolType,
+    setErrorDeterminingPrizePoolType,
+    setLoadingPrizePoolData,
+    setPrizePool,
+    setDepositToken,
+    resetState
+  } = props
 
   const { walletChainId } = useWalletNetwork()
 
@@ -20,7 +29,7 @@ export const PrizePoolDropdown = (props) => {
   const [selectValue, setSelectValue] = useState()
   const [inputError, setInputError] = useState()
 
-  const options = groupedOptions[walletChainId]
+  const options = reactSelectGroupedOptions[walletChainId]
 
   useEffect(() => {
     handleClear()
@@ -29,10 +38,10 @@ export const PrizePoolDropdown = (props) => {
   const determinePrizePoolType = async (address, selectedOption = null) => {
     setPrizePool({})
 
-    const { prizePoolType, depositToken } = await fetchPrizePoolType(provider, address)
+    const { prizePoolType, depositToken, error } = await fetchPrizePoolType(provider, address)
 
-    if (prizePoolType === PRIZE_POOL_TYPE.error) {
-      setInputError(true)
+    if (error) {
+      setErrorDeterminingPrizePoolType(true)
       poolToast.error(`Invalid Staking Token address or Custom Yield Source address entered`)
     }
 
@@ -45,7 +54,8 @@ export const PrizePoolDropdown = (props) => {
 
     // Aave is considered a Custom Yield Source but we want to treat it differently at
     // the display layer for a better experience
-    if (knownCustomYieldSourceAddresses[walletChainId]?.includes(address.toLowerCase())) {
+    const contract = getKnownYieldSourceContract(walletChainId, address)
+    if (contract?.yieldSourceName === 'Aave') {
       prizePool.knownYieldSource = true
     }
 
@@ -63,6 +73,7 @@ export const PrizePoolDropdown = (props) => {
       handleClear()
     }
 
+    setErrorDeterminingPrizePoolType(false)
     setInputError(false)
     setSelectValue(newValue)
 
@@ -102,7 +113,7 @@ export const PrizePoolDropdown = (props) => {
       options={options}
       handleChange={handleChange}
       handleClear={handleClear}
-      inputError={inputError}
+      error={inputError || errorDeterminingPrizePoolType}
       value={selectValue}
     />
   )
